@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookLight</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>BookLight</h1>
+  <p>Open Source AI Study Buddy</p>
+</header>
+
+<main class="dashboard">
+  <section class="chat-panel">
+    <h2>AI Study Chat</h2>
+
+    <div id="chatBox" class="chat-box">
+      <div class="message ai">Hi! What do you want to study today?</div>
+    </div>
+
+    <div class="chat-input">
+      <input id="chatInput" type="text" placeholder="Ask a study question..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </section>
+
+  <section class="tools-panel">
+    <div class="card">
+      <h2>To-Do List</h2>
+      <div class="task-input">
+        <input id="taskInput" type="text" placeholder="Add a task..." />
+        <button onclick="addTask()">Add</button>
+      </div>
+      <ul id="taskList"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Calendar</h2>
+      <input id="eventInput" type="text" placeholder="Event title..." />
+      <input id="eventDate" type="date" />
+      <button onclick="addEvent()">Add Event</button>
+      <ul id="eventList"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Pomodoro Timer</h2>
+      <div id="timer">25:00</div>
+      <button onclick="startTimer()">Start</button>
+      <button onclick="resetTimer()">Reset</button>
+      <p id="studyStats">Study time today: 0 minutes</p>
+    </div>
+  </section>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
