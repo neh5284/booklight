@@ -1,93 +1,57 @@
 let timeLeft = 25 * 60;
-let timerInterval = null;
-let studyMinutes = 0;
+let timerRunning = false;
 
-function sendMessage() {
+// AI Chat Communication [cite: 36]
+async function sendChat() {
     const input = document.getElementById("chatInput");
     const chatBox = document.getElementById("chatBox");
-    const message = input.value.trim();
+    if (!input.value) return;
 
-    if (message === "") return;
-
-    const userMessage = document.createElement("div");
-    userMessage.className = "message user";
-    userMessage.textContent = message;
-    chatBox.appendChild(userMessage);
-
+    chatBox.innerHTML += `<div class="msg user"><b>You:</b> ${input.value}</div>`;
+    const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: input.value })
+    });
+    const data = await res.json();
+    chatBox.innerHTML += `<div class="msg ai"><b>AI:</b> ${data.reply}</div>`;
     input.value = "";
-
-    setTimeout(() => {
-        const aiMessage = document.createElement("div");
-        aiMessage.className = "message ai";
-        aiMessage.textContent = "Good question. I can help you break that into study steps or add it as a task.";
-        chatBox.appendChild(aiMessage);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }, 600);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function addTask() {
-    const input = document.getElementById("taskInput");
-    const taskList = document.getElementById("taskList");
-    const taskText = input.value.trim();
-
-    if (taskText === "") return;
-
-    const li = document.createElement("li");
-    li.textContent = taskText;
-
-    li.onclick = function () {
-        li.classList.toggle("completed");
-    };
-
-    taskList.appendChild(li);
-    input.value = "";
-}
-
-function addEvent() {
-    const title = document.getElementById("eventInput").value.trim();
-    const date = document.getElementById("eventDate").value;
-    const eventList = document.getElementById("eventList");
-
-    if (title === "" || date === "") return;
-
-    const li = document.createElement("li");
-    li.textContent = `${title} — ${date}`;
-    eventList.appendChild(li);
-
-    document.getElementById("eventInput").value = "";
-    document.getElementById("eventDate").value = "";
-}
-
+// Timer Logic & Logging [cite: 110, 116]
 function startTimer() {
-    if (timerInterval !== null) return;
-
-    timerInterval = setInterval(() => {
-        if (timeLeft > 0) {
+    if (timerRunning) return;
+    timerRunning = true;
+    const interval = setInterval(async () => {
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            timerRunning = false;
+            await fetch('/api/timer/log', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ duration: 25 })
+            });
+            updateStats();
+            alert("Study session complete!");
+        } else {
             timeLeft--;
             updateTimerDisplay();
-        } else {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            studyMinutes += 25;
-            document.getElementById("studyStats").textContent =
-                `Study time today: ${studyMinutes} minutes`;
-            alert("Pomodoro complete!");
-            resetTimer();
         }
     }, 1000);
 }
 
-function resetTimer() {
-    clearInterval(timerInterval);
-    timerInterval = null;
-    timeLeft = 25 * 60;
-    updateTimerDisplay();
-}
-
 function updateTimerDisplay() {
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-
-    document.getElementById("timer").textContent =
-        `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    const mins = Math.floor(timeLeft / 60);
+    const secs = timeLeft % 60;
+    document.getElementById("timer").innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
+
+async function updateStats() {
+    const res = await fetch('/api/stats/day');
+    const data = await res.json();
+    document.getElementById("dailyStats").innerText = `Today's Study: ${data.totalMinutes} mins`;
+}
+
+// Initialize
+updateStats();
