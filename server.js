@@ -8,7 +8,15 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-mongoose.connect(process.env.MONGO_URI);
+//MongoDB connection with confirmation logs
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log("MongoDB connected");
+    })
+    .catch((err) => {
+        console.error("MongoDB connection error:", err);
+    });
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // ==========================================
@@ -27,36 +35,64 @@ app.post('/api/chat', async (req, res) => {
             { upsert: true, new: true }
         );
         res.json({ reply, sessionId: session._id });
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
 });
 
-app.get('/api/sessions', async (req, res) => res.json(await Session.find({}, 'title')));
-app.get('/api/sessions/:id', async (req, res) => res.json(await Session.findById(req.params.id)));
-app.patch('/api/sessions/:id', async (req, res) => res.json(await Session.findByIdAndUpdate(req.params.id, req.body, { new: true })));
+app.get('/api/sessions', async (req, res) => {
+    res.json(await Session.find({}, 'title'));
+});
+
+app.get('/api/sessions/:id', async (req, res) => {
+    res.json(await Session.findById(req.params.id));
+});
+
+app.patch('/api/sessions/:id', async (req, res) => {
+    res.json(await Session.findByIdAndUpdate(req.params.id, req.body, { new: true }));
+});
+
 app.delete('/api/sessions/:id', async (req, res) => {
     await Session.findByIdAndDelete(req.params.id);
     res.json({ message: "Session deleted" });
 });
+
 app.post('/api/chat/continue', async (req, res) => {
-    // Acts similar to standard chat for simplicity in this implementation
-    const { message, sessionId } = req.body;
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(message);
-    res.json({ reply: result.response.text() });
+    const { message } = req.body;
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(message);
+        res.json({ reply: result.response.text() });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
 });
-app.delete('/api/chat/message/:id', async (req, res) => res.json({ message: "Message deleted" }));
-app.get('/api/status', (req, res) => res.json({ status: "online" }));
+
+app.delete('/api/chat/message/:id', async (req, res) => {
+    res.json({ message: "Message deleted" });
+});
+
+app.get('/api/status', (req, res) => {
+    res.json({ status: "online" });
+});
 
 // ==========================================
 // TO-DO LIST ENDPOINTS
 // ==========================================
-app.get('/api/tasks', async (req, res) => res.json(await Task.find()));
+app.get('/api/tasks', async (req, res) => {
+    res.json(await Task.find());
+});
+
 app.post('/api/tasks', async (req, res) => {
     const task = new Task(req.body);
     await task.save();
     res.json(task);
 });
-app.patch('/api/tasks/:id', async (req, res) => res.json(await Task.findByIdAndUpdate(req.params.id, req.body, { new: true })));
+
+app.patch('/api/tasks/:id', async (req, res) => {
+    res.json(await Task.findByIdAndUpdate(req.params.id, req.body, { new: true }));
+});
+
 app.delete('/api/tasks/:id', async (req, res) => {
     await Task.findByIdAndDelete(req.params.id);
     res.json({ message: "Task deleted" });
@@ -65,20 +101,29 @@ app.delete('/api/tasks/:id', async (req, res) => {
 // ==========================================
 // CALENDAR ENDPOINTS
 // ==========================================
-app.get('/api/events', async (req, res) => res.json(await Event.find()));
+app.get('/api/events', async (req, res) => {
+    res.json(await Event.find());
+});
+
 app.post('/api/events', async (req, res) => {
     const event = new Event(req.body);
     await event.save();
     res.json(event);
 });
-app.get('/api/events/:id', async (req, res) => res.json(await Event.findById(req.params.id)));
-app.patch('/api/events/:id', async (req, res) => res.json(await Event.findByIdAndUpdate(req.params.id, req.body, { new: true })));
+
+app.get('/api/events/:id', async (req, res) => {
+    res.json(await Event.findById(req.params.id));
+});
+
+app.patch('/api/events/:id', async (req, res) => {
+    res.json(await Event.findByIdAndUpdate(req.params.id, req.body, { new: true }));
+});
+
 app.delete('/api/events/:id', async (req, res) => {
     await Event.findByIdAndDelete(req.params.id);
     res.json({ message: "Event deleted" });
 });
 
-// Convert AI text to Calendar Event
 app.post('/api/events/from-ai', async (req, res) => {
     const { text } = req.body;
     try {
@@ -87,10 +132,13 @@ app.post('/api/events/from-ai', async (req, res) => {
         const result = await model.generateContent(prompt);
         let rawJson = result.response.text().replace(/```json/g, '').replace(/```/g, '');
         const eventData = JSON.parse(rawJson);
+
         const event = new Event(eventData);
         await event.save();
         res.json(event);
-    } catch (err) { res.status(500).json({ error: "Failed to parse AI event" }); }
+    } catch (err) {
+        res.status(500).json({ error: "Failed to parse AI event" });
+    }
 });
 
 // ==========================================
@@ -101,11 +149,15 @@ app.post('/api/timer/log', async (req, res) => {
     await log.save();
     res.json({ message: "Session logged" });
 });
+
 app.delete('/api/timer/log/:id', async (req, res) => {
     await TimerLog.findByIdAndDelete(req.params.id);
     res.json({ message: "Timer log deleted" });
 });
-app.patch('/api/timer/log/:id', async (req, res) => res.json(await TimerLog.findByIdAndUpdate(req.params.id, req.body, { new: true })));
+
+app.patch('/api/timer/log/:id', async (req, res) => {
+    res.json(await TimerLog.findByIdAndUpdate(req.params.id, req.body, { new: true }));
+});
 
 // Stat calculations
 const getStats = async (days) => {
@@ -115,8 +167,18 @@ const getStats = async (days) => {
     return logs.reduce((sum, log) => sum + log.duration, 0);
 };
 
-app.get('/api/stats/day', async (req, res) => res.json({ totalMinutes: await getStats(1) }));
-app.get('/api/stats/week', async (req, res) => res.json({ totalMinutes: await getStats(7) }));
-app.get('/api/stats/month', async (req, res) => res.json({ totalMinutes: await getStats(30) }));
+app.get('/api/stats/day', async (req, res) => {
+    res.json({ totalMinutes: await getStats(1) });
+});
 
-app.listen(process.env.PORT || 3000, () => console.log(`BookLight running on http://localhost:${process.env.PORT || 3000}`));
+app.get('/api/stats/week', async (req, res) => {
+    res.json({ totalMinutes: await getStats(7) });
+});
+
+app.get('/api/stats/month', async (req, res) => {
+    res.json({ totalMinutes: await getStats(30) });
+});
+
+app.listen(process.env.PORT || 3000, () => {
+    console.log(`BookLight running on http://localhost:${process.env.PORT || 3000}`);
+});
