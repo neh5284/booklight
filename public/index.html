@@ -6,11 +6,17 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<header>
+  <h1>BookLight</h1>
+  <p>Open Source AI Study Buddy</p>
+</header>
+
 <div class="dashboard">
   <section class="ai-panel">
-    <h2>BookLight AI Tutor</h2>
+    <h2>AI Study Chat</h2>
     <div id="chatBox" class="chat-box"></div>
-    <div class="input-area">
+    <div class="chat-input">
       <input type="text" id="chatInput" placeholder="Ask a study question...">
       <button onclick="sendChat()">Send</button>
     </div>
@@ -21,20 +27,27 @@
       <h3>Pomodoro Timer</h3>
       <div id="timer">25:00</div>
       <button onclick="startTimer()">Start</button>
-      <p id="dailyStats">Today's Study: 0 mins</p>
+      <button onclick="resetTimer()" style="background: #6b7280;">Reset</button>
+      <p id="dailyStats" style="margin-top: 15px; font-size: 14px; line-height: 1.5;"></p>
     </div>
+
     <div class="card">
       <h3>To-Do List</h3>
+      <div class="task-input">
+        <input type="text" id="taskInput" placeholder="Add task...">
+        <button onclick="addTask()">Add</button>
+      </div>
       <ul id="taskList"></ul>
-      <input type="text" id="taskInput" placeholder="Add task...">
-      <button onclick="addTask()">Add</button>
+      <button onclick="clearCompleted()" style="margin-top: 10px; width: 100%; background: #ef4444;">Clear Completed Tasks</button>
     </div>
+
     <div class="card">
       <h3>Calendar</h3>
-      <div id="eventList"></div>
+      <ul id="eventList"></ul>
     </div>
   </section>
 </div>
+
 <script src="script.js"></script>
 </body>
 </html>
